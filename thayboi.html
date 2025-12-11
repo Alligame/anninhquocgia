@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HỆ THỐNG KHUYẾT TẬT</title>
+    <style>
+        /* CSS Cơ bản */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e8f4f8; 
+            margin: 0;
+            flex-direction: column;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 650px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #1e3a8a; 
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #a8c0d1;
+            border-radius: 8px;
+            box-sizing: border-box; 
+        }
+
+        button {
+            background-color: #f97316; 
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px; 
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #ea580c;
+            transform: translateY(-2px);
+        }
+
+        /* --- CSS cho Màn hình Tải (Animation) --- */
+        #loading-screen { display: none; padding: 50px 20px; }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.03); } 100% { opacity: 1; transform: scale(1); } }
+        #loading-screen h2, #loading-text { animation: pulse 1.5s infinite ease-in-out; color: #1e3aa0; }
+        .progress-bar { width: 100%; background-color: #d1e5f0; border-radius: 15px; margin: 20px 0; overflow: hidden; }
+        .progress { height: 30px; background-color: #059669; width: 0%; line-height: 30px; color: white; text-align: right; padding-right: 10px; transition: width 0.3s ease-out; font-weight: bold; border-radius: 15px 0 0 15px; }
+
+
+        /* --- CSS cho Mind Map (Sơ đồ tư duy) --- */
+        #result-screen {
+            display: none; 
+            padding: 20px;
+            margin-top: 20px;
+            background-color: #f1f8fc;
+            border: 2px dashed #93c5fd;
+            border-radius: 20px;
+            text-align: center;
+        }
+        
+        /* Credit */
+        .credits {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.5;
+        }
+        .developer {
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+        .thank-you {
+            font-style: italic;
+            color: #f97316;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+
+        .mind-map {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+            position: relative;
+        }
+
+        /* Khối trung tâm (Center Node) */
+        .center-node {
+            background: #f97316; 
+            color: white;
+            padding: 18px 30px;
+            border-radius: 40px; 
+            font-size: 1.3em;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 6px 15px rgba(249, 115, 22, 0.4);
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Nhánh chính (Main Branch) */
+        .main-branch {
+            list-style: none;
+            padding-left: 0;
+            position: relative;
+            display: flex;
+            flex-wrap: wrap; 
+            justify-content: space-around;
+        }
+
+        .main-branch > li {
+            width: 45%; 
+            min-width: 250px;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .main-node {
+            display: inline-block;
+            background: #059669; 
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px; 
+            font-weight: bold;
+            box-shadow: 0 3px 8px rgba(5, 150, 105, 0.3);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Nhánh phụ (Sub Branch - mô phỏng bong bóng/mây) */
+        .sub-branch {
+            list-style: none;
+            padding-left: 10px;
+            margin: 15px 0 0 0;
+        }
+        
+        .sub-branch li {
+            position: relative;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #4c1d95;
+            background: #e9d5ff; 
+            border-radius: 15px; 
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            border-left: 4px solid #8b5cf6; 
+        }
+        
+        /* Hiệu ứng xuất hiện kết quả */
+        @keyframes fadeInScale {
+            0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .show-result {
+            animation: fadeInScale 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; 
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="input-form">
+            <h2>🔎 PHÂN TÍCH </h2>
+            <form id="info-form">
+                <label for="name">Tên của bạn:</label>
+                <input type="text" id="name" required placeholder="Ví dụ: Tèo, Tít...">
+
+                <label for="age">Tuổi của bạn:</label>
+                <input type="number" id="age" required min="1" max="150" placeholder="Ví dụ: 25">
+
+                <label for="height">Chiều cao (cm):</label>
+                <input type="number" id="height" required min="50" max="250" placeholder="Ví dụ: 170">
+                
+                <label for="weight">Cân nặng (kg):</label>
+                <input type="number" id="weight" required min="10" max="500" placeholder="Ví dụ: 65">
+
+                <button type="submit">PhucLuom bói</button>
+            </form>
+        </div>
+
+        <div id="loading-screen">
+            <h2>Đợi hệ thống đang khuyết tật...</h2>
+            <p>Vui lòng chờ. Hệ thống đang tìm ra điểm để "chê" bạn...</p>
+            <div class="progress-bar">
+                <div class="progress" id="progress-value">0%</div>
+            </div>
+            <p id="loading-text">Đang đánh giá mức độ "thiếu muối" của tính cách...</p>
+        </div>
+
+        <div id="result-screen">
+            <h2 style="color:#f97316;">❌ HỆ THỐNG PHUCLUOM BÓI '-' ❌</h2>
+            
+            <div id="analysis-result">
+                </div>
+            <br>
+            <button onclick="window.location.reload()">Bói again</button>
+            
+            <div class="credits">
+                <p class="thank-you">Cảm ơn đã sử dụng hệ thống PhucLuom bói uy tín này !</p>
+                <p>Development & Logic by: <span class="developer">Nguyễn Đại Phúc</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('info-form');
+        const inputForm = document.getElementById('input-form');
+        const loadingScreen = document.getElementById('loading-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const progressValue = document.getElementById('progress-value');
+        const analysisResult = document.getElementById('analysis-result');
+        const loadingText = document.getElementById('loading-text');
+
+        // --- CÁC MẢNG CÂU CHÊ CƯỜI NGẪU NHIÊN ---
+
+        const appearanceVariations = {
+            // Quá gầy (BMI < 18)
+            tooThin: [
+                "Bạn ăn gì mà nhẹ như một lời hứa vậy? Nhớ buộc dây giày cẩn thận kẻo gió thổi bay đấy.",
+                "BMI báo động: Cơ thể bạn mỏng manh đến mức cần giấy phép xây dựng để đứng thẳng.",
+                "Tỷ lệ cơ thể: Bạn thuộc team 'mặc áo rộng để che giấu sự tồn tại'."
+            ],
+            // Quá cân (BMI > 26)
+            tooHeavy: [
+                "Hệ thống phát hiện bạn mang theo 'tình yêu' quá lớn trong cơ thể. Nhớ lăn đi chứ đừng cố đi bộ nhé. Dễ làm rung chuyển địa cầu lắm!",
+                "Bạn đạt đến cảnh giới 'không cần gối' vì cơ thể đã tự có đệm.",
+                "Số liệu này cho thấy bạn đã thắng cuộc thi 'ai ăn nhiều kẹo nhất' năm vừa qua."
+            ],
+            // Bình thường (18 <= BMI <= 26)
+            normalWeight: [
+                "Chỉ số BMI hoàn hảo... cho một người mẫu đồ ăn vặt. Sẽ có ngày bạn cần dùng dây an toàn khi đứng.",
+                "Quá bình thường, không có gì để chê bai. Thôi thì... cố gắng ở kiếp sau nhé!",
+                "Cân nặng cân đối... nhưng có vẻ như bạn đang cố giấu một túi khoai tây chiên dưới áo."
+            ],
+            // Quá thấp (< 155 cm)
+            tooShort: [
+                "Hệ thống phải dùng kính lúp để tìm thông số này. Khả năng cao là bạn và nấm lùn có mối quan hệ họ hàng.",
+                "Đừng che chắn tầm nhìn của người khác nhé! Bạn cần một giấy phép để leo lên ghế lấy đồ.",
+                "Giống như một phiên bản thu nhỏ: tiện lợi nhưng thiếu tầm nhìn."
+            ],
+            // Quá cao (> 185 cm)
+            tooTall: [
+                "Rất ấn tượng. Bạn chắc chắn phải cẩn thận khi đi qua cửa ra vào. Đừng quên xin lỗi đám mây vì bạn đã làm nó đau.",
+                "Bạn có thể được dùng làm cột thu sóng di động trong trường hợp khẩn cấp.",
+                "Tầm nhìn của bạn thật rộng lớn, nhưng đừng nhìn xuống quá nhiều, kẻo đau cổ."
+            ],
+            // Chiều cao trung bình
+            normalHeight: [
+                "Chiều cao quá 'bình thường', không có gì để châm biếm cả. Thôi thì... cố gắng ở kiếp sau nhé!",
+                "Chỉ số chiều cao an toàn. Có lẽ bạn cần một chiếc thang máy cá nhân để nổi bật."
+            ],
+            // Điểm nhấn ngẫu nhiên
+            focus: [
+                "Khuôn mặt: Hệ thống nhận diện sự 'thiếu ngủ' kinh niên.",
+                "Màu da: Sắc độ 'hơi thiếu ánh nắng mặt trời nghiêm trọng'.",
+                "Trang phục: Có vẻ là điểm cộng duy nhất.",
+                "Mái tóc: Có vẻ như vừa trải qua một trận chiến với máy sấy.",
+                "Đôi mắt: Long lanh... như sắp phải trả nợ."
+            ]
+        };
+
+        // Biến thể cho Tính cách
+        const personalityComments = {
+            branches: [
+                {
+                    main: "Độ Hài Hước & Kiên Nhẫn",
+                    subs: [
+                        "Cần phải giải thích sau mỗi câu chuyện cười. (Ghi chú: Lỗi không phải do người nghe).",
+                        "Chỉ số kiên nhẫn cực kỳ cao... cho việc xem quảng cáo YouTube.",
+                        "Chỉ giỏi 'cà khịa' trong đầu, nói ra là trật lất."
+                    ]
+                },
+                {
+                    main: "Lối Sống & Thói Quen",
+                    subs: [
+                        "Hướng ngoại về phía tủ lạnh. Hướng nội về phía giường ngủ.",
+                        "Độ tập trung: Tương đương với việc cố gắng nhớ mật khẩu sau khi đổi 5 phút trước.",
+                        "Mức độ lười biếng có hệ thống. 'Chờ mai làm' là khẩu hiệu."
+                    ]
+                },
+                {
+                    main: "Xã Giao & Cá Tính",
+                    subs: [
+                        "Dễ thương. Nhưng dễ thương ở đây là dễ bị... lạc đường.",
+                        "Rất giỏi lắng nghe, nhất là khi câu chuyện liên quan đến chính bạn. (Thao túng tâm lý cấp độ 0).",
+                        "Chắc chắn là đa nhân cách... hoặc chỉ đơn giản là đãng trí."
+                    ]
+                }
+            ]
+        };
+
+        // Mô tả các bước tải...
+        const loadSteps = [
+            "Đang tìm kiếm dữ liệu hài hước trên server...", "Đang so sánh với các ngôi sao hạng A (để thấy sự khác biệt)...",
+            "Đang tính toán chỉ số 'tự tin' giả lập...", "Đã tìm thấy điểm yếu. Đang phóng đại...",
+            "Sắp hoàn thành quá trình 'sỉ vỉa' thân thiện...", "Đang tạo ra câu chê cười độc nhất vô nhị...",
+            "Phân tích xem tính cách có 'lạc quẻ' với ngoại hình không..."
+        ];
+
+        const getRandomComment = (array) => array[Math.floor(Math.random() * array.length)];
+
+
+        // --- Event Listeners và Hàm Chính ---
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const age = parseInt(document.getElementById('age').value);
+            const height = parseInt(document.getElementById('height').value);
+            const weight = parseInt(document.getElementById('weight').value);
+
+            inputForm.style.display = 'none';
+            loadingScreen.style.display = 'block';
+
+            startLoading(name, age, height, weight);
+        });
+
+        function startLoading(name, age, height, weight) {
+            let progress = 0;
+            let stepIndex = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 4) + 1;
+                if (progress > 100) progress = 100;
+
+                progressValue.style.width = progress + '%';
+                progressValue.textContent = progress + '%';
+
+                if (progress > stepIndex * (100 / loadSteps.length) && stepIndex < loadSteps.length) {
+                    loadingText.textContent = loadSteps[stepIndex];
+                    stepIndex++;
+                }
+
+                if (progress === 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        showResults(name, age, height, weight);
+                    }, 1000);
+                }
+            }, 100);
+        }
+
+        // --- Hàm Tạo Mind Map ---
+        function createMindMapHTML(name, age, height, weight) {
+            let html = `<div class="center-node">🎯 ${name.toUpperCase()} (${age} tuổi)</div>`;
+            html += `<ul class="main-branch">`;
+
+            // 1. NHÁNH NGOẠI HÌNH
+            html += `
+                <li>
+                    <span class="main-node">Ngoại Hình</span>
+                    <ul class="sub-branch">
+                        ${getAppearanceBranches(height, weight)}
+                    </ul>
+                </li>
+            `;
+
+            // 2. NHÁNH TÍNH CÁCH
+            html += `
+                <li>
+                    <span class="main-node">Tính Cách</span>
+                    <ul class="sub-branch">
+                        ${getPersonalityBranches(age)}
+                    </ul>
+                </li>
+            `;
+
+            html += `</ul>`;
+            return html;
+        }
+
+
+        function getAppearanceBranches(height, weight) {
+            let subsHTML = '';
+            
+            // 1. Nhánh Chiều Cao (Ngẫu nhiên)
+            let heightComment;
+            if (height < 155) {
+                heightComment = getRandomComment(appearanceVariations.tooShort);
+            } else if (height > 185) {
+                heightComment = getRandomComment(appearanceVariations.tooTall);
+            } else {
+                heightComment = getRandomComment(appearanceVariations.normalHeight);
+            }
+            subsHTML += `<li>Chiều Cao (${height}cm): ${heightComment}</li>`;
+
+            // 2. Nhánh Cân Nặng/BMI (Ngẫu nhiên)
+            const humorBMI = (weight / ((height / 100) * (height / 100))).toFixed(1);
+            let weightComment;
+            if (humorBMI < 18) {
+                weightComment = getRandomComment(appearanceVariations.tooThin);
+            } else if (humorBMI > 26) {
+                weightComment = getRandomComment(appearanceVariations.tooHeavy);
+            } else {
+                weightComment = getRandomComment(appearanceVariations.normalWeight);
+            }
+            subsHTML += `<li>Cân Nặng (BMI ${humorBMI}): ${weightComment}</li>`;
+
+            // 3. Nhánh Điểm Nhấn Ngẫu nhiên
+            const randomFocusComment = getRandomComment(appearanceVariations.focus);
+            subsHTML += `<li>Điểm Nhấn Đặc Biệt: ${randomFocusComment}</li>`;
+
+            return subsHTML;
+        }
+        
+        function getPersonalityBranches(age) {
+            let subsHTML = '';
+            
+            // Nhánh Chung Ngẫu nhiên (3 nhánh, mỗi nhánh chọn ngẫu nhiên 1 câu)
+            personalityComments.branches.forEach(branch => {
+                const randomSub = branch.subs[Math.floor(Math.random() * branch.subs.length)];
+                subsHTML += `<li>${randomSub}</li>`;
+            });
+
+            // Nhánh theo Tuổi 
+            let ageComment;
+            if (age < 18) {
+                ageComment = `Đang trong giai đoạn 'khó ở' nhất. Mức độ mâu thuẫn nội tâm về việc chọn mặc gì hôm nay cực cao.`;
+            } else if (age >= 18 && age < 30) {
+                ageComment = `Giai đoạn 'mơ mộng hão huyền và thiếu tiền'. Rất năng động... trên mạng xã hội.`;
+            } else if (age >= 30) {
+                ageComment = `Đã đạt đến cảnh giới 'ngủ sớm là một thành tựu'. Lười biếng một cách có hệ thống.`;
+            }
+            subsHTML += `<li>Đánh Giá Theo Tuổi (${age}): ${ageComment}</li>`;
+
+            return subsHTML;
+        }
+        
+        function showResults(name, age, height, weight) {
+            loadingScreen.style.display = 'none';
+            resultScreen.style.display = 'block';
+            resultScreen.classList.add('show-result'); 
+
+            const mapHTML = createMindMapHTML(name, age, height, weight);
+
+            analysisResult.innerHTML = mapHTML;
+        }
+
+    </script>
+
+</body>
+</html>
